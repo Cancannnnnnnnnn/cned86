@@ -61,8 +61,20 @@ Il contient :
 ### Gestion du personnel
 ![Menu](images/image_gestion_du_personnel.png)
 
+### Ajout d'un personnel
+![Ajout Personnel](images/image_ajouter_un_personnel.png)
+
+### Modifier un personnel
+![Modifier Personnel](images/image_modifier_un_personnel.png)
+
 ### Gestion des absences
 ![Absences](images/image_gestion_des_absences.png)
+### Ajout d'une absence
+![Ajout absence](images/image_ajouter_une_absence.png)
+
+### Modifier une absence
+![Modifier absence](images/image_modifier_une_absence.png)
+---
 
 ---
 
