@@ -12,6 +12,20 @@ Elle permet la gestion des absences du personnel (ajout, modification, suppressi
 ## 2. Objectif de l’application
 L’objectif est de fournir un outil de gestion des absences permettant de centraliser les informations des personnels, services et motifs.
 
+## Cas d'utilisation couverts
+
+L'application permet de :
+
+- Se connecter en tant que responsable
+- Ajouter un personnel
+- Modifier un personnel
+- Supprimer un personnel
+- Consulter les absences
+- Ajouter une absence
+- Modifier une absence
+- Supprimer une absence
+- Empêcher le chevauchement des périodes d'absence
+
 ---
 
 ## 3. Fonctionnalités
