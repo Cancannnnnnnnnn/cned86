@@ -62,7 +62,7 @@ Il contient :
 ![Menu](images/image_gestion_du_personnel.png)
 
 ### Gestion des absences
-![Absences](images/gestoin_des_absences.png)
+![Absences](images/gestion_des_absences.png)
 
 ---
 
