@@ -47,7 +47,7 @@ Il contient :
 ## 6. Modélisation
 
 ### MCD
-![MCD](image/image bdd.png)
+![MCD](images/image bdd.png)
 
 ### Diagramme de paquetages
 ![Paquetages](images/image schéma.png)
