@@ -45,6 +45,17 @@ L'application permet de :
 - Visual Studio
 - Git / GitHub
 
+## Architecture du projet
+
+L'application suit une organisation en couches :
+
+- Model : représentation des données
+- DAL : accès à la base de données
+- Controller : traitement logique
+- View : interfaces utilisateur
+
+Cette architecture facilite la maintenance et l'évolution du projet.
+
 ---
 
 ## 5. Base de données
@@ -92,11 +103,33 @@ Il contient :
 
 ---
 
-## 8. Installation de l’application
-1. Installer XAMPP
-2. Importer la base de données
-3. Lancer l’installeur (.msi)
-4. Exécuter l’application
+## 8 Installation de l’application
+
+### Prérequis
+
+- Visual Studio
+- XAMPP
+- MySQL/MariaDB
+- .NET Framework compatible
+
+### Installation
+
+1. Installer XAMPP et démarrer Apache + MySQL
+2. Importer le script SQL fourni
+3. Créer automatiquement la base cned86
+4. Vérifier l'utilisateur SQL :
+
+login : admin
+mot de passe : admin123
+
+5. Installer l'application via le fichier .msi
+6. Lancer l'application
+
+### Connexion à l'application
+
+Identifiant : admin
+
+Mot de passe : admin123
 
 ---
 
@@ -127,6 +160,17 @@ Rédaction du fichier README, ajout des captures d’écran (MCD, interfaces, ar
 Création du package d’installation permettant de déployer l’application sur un autre poste utilisateur.
 
 ---
+
+## 9. Documentation utilisateur
+
+Une vidéo de démonstration présentant l’ensemble des fonctionnalités est disponible dans le portfolio :
+
+- authentification
+- gestion du personnel
+- gestion des absences
+- contrôle des chevauchements
+- suppression et modification
+
 
 ## 10. Améliorations possibles
 - Export PDF
