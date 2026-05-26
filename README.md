@@ -47,22 +47,22 @@ Il contient :
 ## 6. Modélisation
 
 ### MCD
-![MCD](images/image bdd.png)
+![MCD](images/image_bdd.png)
 
 ### Diagramme de paquetages
-![Paquetages](images/image schéma.png)
+![Paquetages](images/image_schéma.png)
 ---
 
 ## 7. Interfaces de l’application
 
 ### Connexion
-![Login](images/image connexion responsable.png)
+![Login](images/image_connexion_responsable.png)
 
 ### Gestion du personnel
-![Menu](images/image gestion du personnel.png)
+![Menu](images/image_gestion_du_personnel.png)
 
 ### Gestion des absences
-![Absences](images/gestoin des absences.png)
+![Absences](images/gestoin_des_absences.png)
 
 ---
 
