@@ -86,13 +86,31 @@ Il contient :
 
 ---
 
-## 9. Historique des commits
-- Initialisation du projet
-- Création de la base de données
-- Mise en place de l’authentification
-- Développement des interfaces
-- Ajout des fonctionnalités CRUD
-- Création de l’installeur
+## Historique des commits
+
+### 1. Initialisation du projet
+Mise en place de la solution Visual Studio, organisation de l’architecture générale (Model, View, Controller, DAL) et création du dépôt Git.
+
+### 2. Ajout de la base de données
+Création et intégration de la base de données MySQL (via XAMPP). Mise en place des tables principales : personnel, absence, service, motif et responsable.
+
+### 3. Création des interfaces utilisateur
+Développement des interfaces Windows Forms permettant l’interaction utilisateur (navigation principale et formulaires de gestion).
+
+### 4. Mise en place de l’authentification
+Développement du système de connexion avec vérification des identifiants via la table responsable.
+
+### 5. Gestion du personnel
+Implémentation des fonctionnalités CRUD (ajout, modification, suppression, affichage) pour la gestion des employés.
+
+### 6. Gestion des absences
+Création du module de gestion des absences avec liaison aux tables personnel et motif.
+
+### 7. Création du README et documentation
+Rédaction du fichier README, ajout des captures d’écran (MCD, interfaces, architecture) et documentation complète du projet.
+
+### 8. Génération de l’installeur
+Création du package d’installation permettant de déployer l’application sur un autre poste utilisateur.
 
 ---
 
