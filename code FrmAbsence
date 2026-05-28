@@ -1,0 +1,149 @@
+using cned86.controller;
+using System;
+using System.Windows.Forms;
+
+namespace cned86
+{
+    /// <summary>
+    /// Formulaire qui permet d'afficher les absences d'un personnel et de les gérer
+    /// </summary>
+    public partial class FrmAbsences : Form
+    {
+        private int idPersonnel;
+        private string nomPersonnel;
+
+        private AbsenceController ctrl;
+
+        /// <summary>
+        /// Initialise le formulaire des absences
+        /// </summary>
+        /// <param name="id">Identifiant du personnel</param>
+        /// <param name="nomComplet">Nom complet du personnel</param>
+        public FrmAbsences(int id, string nomComplet)
+        {
+            InitializeComponent();
+
+            idPersonnel = id;
+            nomPersonnel = nomComplet;
+
+            ctrl = new AbsenceController();
+
+            this.Load += FrmAbsences_Load;
+
+            btnAjouter.Click += btnAjouter_Click;
+            btnSupprimer.Click += btnSupprimer_Click;
+            btnModifier.Click += btnModifier_Click;
+        }
+
+        /// <summary>
+        /// Permet de charger les données au démarrage du formulaire 
+        /// </summary>
+        
+        private void FrmAbsences_Load(object sender, EventArgs e)
+        {
+            lblPersonnel.Text = nomPersonnel;
+            this.Text = "Absences de " + nomPersonnel;
+
+            LoadAbsences();
+        }
+
+        /// <summary>
+        /// Permet de charger la liste des absences du personnel dans le datagridview 
+        /// </summary>
+        private void LoadAbsences()
+        {
+            dgvAbsences.DataSource = ctrl.GetAbsencesByPersonnel(idPersonnel);
+
+            if (dgvAbsences.Columns["IdPersonnel"] != null)
+                dgvAbsences.Columns["IdPersonnel"].Visible = false;
+
+            if (dgvAbsences.Columns["IdAbsence"] != null)
+                dgvAbsences.Columns["IdAbsence"].Visible = false;
+        }
+
+        /// <summary>
+        /// Permet d'ouvrir le formulaire d'ajout d'une absence
+        /// </summary>
+        
+        private void btnAjouter_Click(object sender, EventArgs e)
+        {
+            FrmAjouterAbsence frm = new FrmAjouterAbsence(idPersonnel);
+            frm.ShowDialog();
+
+            LoadAbsences();
+        }
+
+        /// <summary>
+        /// Permet de supprimer l'absence sélectionnée
+        /// </summary>
+        
+        private void btnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (dgvAbsences.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Veuillez sélectionner une absence !");
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Confirmer la suppression de l'absence ?",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            if (result != DialogResult.Yes)
+                return;
+
+            try
+            {
+                int idAbsence = Convert.ToInt32(
+                    dgvAbsences.SelectedRows[0].Cells["IdAbsence"].Value
+                );
+
+                cned86.dal.AbsenceDAL.Delete(idAbsence);
+
+                MessageBox.Show("Absence supprimée !");
+                LoadAbsences();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur suppression : " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Permet de modifier l'absence sélectionnée en ouvrant un formulaire
+        /// </summary>
+        
+        private void btnModifier_Click(object sender, EventArgs e)
+        {
+            if (dgvAbsences.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Veuillez sélectionner une absence !");
+                return;
+            }
+
+            DataGridViewRow row = dgvAbsences.SelectedRows[0];
+
+            try
+            {
+                FrmModifierAbsences frm = new FrmModifierAbsences(
+                    idPersonnel,
+                    nomPersonnel,
+                    Convert.ToDateTime(row.Cells["DateDebut"].Value),
+                    Convert.ToDateTime(row.Cells["DateFin"].Value),
+                    Convert.ToInt32(row.Cells["IdMotif"].Value)
+                );
+
+                frm.ShowDialog();
+
+                LoadAbsences();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur ouverture modification : " + ex.Message);
+            }
+        }
+    }
+}
