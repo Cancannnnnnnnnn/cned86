@@ -1,0 +1,168 @@
+using cned86.bddmanager;
+using cned86.dal;
+using MySql.Data.MySqlClient;
+using System;
+using System.Data;
+using System.Windows.Forms;
+
+namespace cned86
+{
+    /// <summary>
+    /// Formulaire permettant de modifier les informations d'un personnel
+    /// </summary>
+    public partial class FrmModifierPersonnel : Form
+    {
+        private int idPersonnel;
+
+        /// <summary>
+        /// Permet d'initialiser le formulaire de modification d'un personnel
+        /// </summary>
+        /// <param name="id">Identifiant du personnel</param>
+        public FrmModifierPersonnel(int id)
+        {
+            InitializeComponent();
+            idPersonnel = id;
+
+            this.Load += FrmModifierPersonnel_Load;
+            btnEnregistrer.Click += btnEnregistrer_Click;
+            btnAnnuler.Click += (s, e) => this.Close();
+        }
+
+        /// <summary>
+        /// Permet de charger les informatiosn du personnel dans le formulaire 
+        /// </summary>
+       
+        private void FrmModifierPersonnel_Load(object sender, EventArgs e)
+        {
+            LoadServices();
+            LoadPersonnelData();
+        }
+
+        private void LoadServices()
+        {
+            using (MySqlConnection cn = BddManager.GetConnection())
+            {
+                cn.Open();
+
+                string query = "SELECT idservice, nom FROM service";
+
+                MySqlDataAdapter da = new MySqlDataAdapter(query, cn);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                cmbService.DataSource = dt;
+                cmbService.DisplayMember = "nom";
+                cmbService.ValueMember = "idservice";
+            }
+        }
+
+        private void LoadPersonnelData()
+        {
+            using (MySqlConnection cn = BddManager.GetConnection())
+            {
+                cn.Open();
+
+                string query = @"SELECT nom, prenom, tel, mail, idservice
+                                 FROM personnel
+                                 WHERE idpersonnel = @id";
+
+                using (MySqlCommand cmd = new MySqlCommand(query, cn))
+                {
+                    cmd.Parameters.AddWithValue("@id", idPersonnel);
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            txtNom.Text = reader["nom"].ToString();
+                            txtPrenom.Text = reader["prenom"].ToString();
+                            txtTelephone.Text = reader["tel"].ToString();
+                            txtMail.Text = reader["mail"].ToString();
+
+                            cmbService.SelectedValue = reader["idservice"];
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Permet d'enregistrer les modifications du personnel dans la base de données 
+        /// </summary>
+        
+        private void btnEnregistrer_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtNom.Text) ||
+                string.IsNullOrWhiteSpace(txtPrenom.Text) ||
+                string.IsNullOrWhiteSpace(txtTelephone.Text) ||
+                string.IsNullOrWhiteSpace(txtMail.Text) ||
+                cmbService.SelectedValue == null)
+            {
+                MessageBox.Show("Tous les champs doivent être remplis !");
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Confirmer les modifications ?",
+                "Modification",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (result != DialogResult.Yes)
+                return;
+
+            try
+            {
+                using (MySqlConnection cn = BddManager.GetConnection())
+                {
+                    cn.Open();
+
+                    string query = @"UPDATE personnel
+                                     SET nom=@nom,
+                                         prenom=@prenom,
+                                         tel=@tel,
+                                         mail=@mail,
+                                         idservice=@service
+                                     WHERE idpersonnel=@id";
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, cn))
+                    {
+                        cmd.Parameters.AddWithValue("@nom", txtNom.Text.Trim());
+                        cmd.Parameters.AddWithValue("@prenom", txtPrenom.Text.Trim());
+                        cmd.Parameters.AddWithValue("@tel", txtTelephone.Text.Trim());
+                        cmd.Parameters.AddWithValue("@mail", txtMail.Text.Trim());
+                        cmd.Parameters.AddWithValue("@service", cmbService.SelectedValue);
+                        cmd.Parameters.AddWithValue("@id", idPersonnel);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                MessageBox.Show("Modification enregistrée !");
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur modification : " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Permet de fermet le formulare après confirmation sans enregistrer les modifications apportées
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnAnnuler_Click(object sender, EventArgs e)
+        {
+            DialogResult result = MessageBox.Show(
+       "Voulez-vous vraiment annuler ?",
+       "Confirmation",
+       MessageBoxButtons.YesNo,
+       MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+                this.Close();
+        }
+    }
+}
