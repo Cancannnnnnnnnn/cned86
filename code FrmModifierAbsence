@@ -1,0 +1,171 @@
+using cned86.bddmanager;
+using cned86.dal;
+using MySql.Data.MySqlClient;
+using System;
+using System.Data;
+using System.Windows.Forms;
+
+namespace cned86
+{
+    /// <summary>
+    ///  Permet d'afficher un formulaire permettant de modifier une absence existante préalablement séléctionnée 
+    /// </summary>
+    public partial class FrmModifierAbsences : Form
+    {
+        private int idPersonnel;
+        private DateTime ancienneDateDebut;
+        private DateTime ancienneDateFin;
+        private int ancienMotif;
+        private string nomPersonnel;
+
+        /// <summary>
+        /// Permet d'initialiser le formulaire de modification d'une absence
+        /// </summary>
+        /// <param name="id">Identifiant du personnel</param>
+        /// <param name="nom">Nom complet du personnel</param>
+        /// <param name="dateDebut">Date de début de l'absence</param>
+        /// <param name="dateFin">Date de fin de l'absence</param>
+        /// <param name="idMotif">Identifiant du motif de l'absence</param>
+        public FrmModifierAbsences(
+            int id,
+            string nom,
+            DateTime dateDebut,
+            DateTime dateFin,
+            int idMotif)
+        {
+            InitializeComponent();
+
+            idPersonnel = id;
+            nomPersonnel = nom;
+
+            ancienneDateDebut = dateDebut;
+            ancienneDateFin = dateFin;
+            ancienMotif = idMotif;
+
+            this.Load += FrmModifierAbsences_Load;
+            this.btnEnregistrer.Click += btnEnregistrer_Click;
+            this.btnAnnuler.Click += btnAnnuler_Click;
+        }
+
+        /// <summary>
+        /// Permet de charger les données de l'absence à modifier dans le formulaire
+        /// </summary>
+        
+        private void FrmModifierAbsences_Load(object sender, EventArgs e)
+        {
+            if (lblPersonnel != null)
+                lblPersonnel.Text = nomPersonnel;
+
+            LoadMotifs();
+
+            if (dtpDebut != null)
+                dtpDebut.Value = ancienneDateDebut;
+
+            if (dtpFin != null)
+                dtpFin.Value = ancienneDateFin;
+        }
+
+        /// <summary>
+        /// Permet de charger la liste de smotifs d'absences
+        /// </summary>
+        private void LoadMotifs()
+        {
+            using (MySqlConnection cn = BddManager.GetConnection())
+            {
+                cn.Open();
+
+                string query = "SELECT idmotif, libelle FROM motif";
+
+                MySqlDataAdapter da = new MySqlDataAdapter(query, cn);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                cmbMotif.DataSource = dt;
+                cmbMotif.DisplayMember = "libelle";
+                cmbMotif.ValueMember = "idmotif";
+
+                cmbMotif.SelectedValue = ancienMotif;
+            }
+        }
+
+        /// <summary>
+        /// Permet d'enregistrer les modifications réalisées, dans la base de données
+        /// </summary>
+        
+        private void btnEnregistrer_Click(object sender, EventArgs e)
+        {
+            if (cmbMotif == null || cmbMotif.SelectedValue == null)
+            {
+                MessageBox.Show("Veuillez sélectionner un motif !");
+                return;
+            }
+
+            if (dtpDebut.Value > dtpFin.Value)
+            {
+                MessageBox.Show("La date de fin doit être après la date de début !");
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Confirmer la modification de l’absence ?",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (result != DialogResult.Yes)
+                return;
+
+            try
+            {
+                using (MySqlConnection cn = BddManager.GetConnection())
+                {
+                    cn.Open();
+
+                    string query = @"
+                        UPDATE absence
+                        SET datedebut = @debut,
+                            datefin = @fin,
+                            idmotif = @motif
+                        WHERE idpersonnel = @id
+                        AND datedebut = @ancienDebut
+                        LIMIT 1";
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, cn))
+                    {
+                        cmd.Parameters.AddWithValue("@id", idPersonnel);
+                        cmd.Parameters.AddWithValue("@debut", dtpDebut.Value);
+                        cmd.Parameters.AddWithValue("@fin", dtpFin.Value);
+                        cmd.Parameters.AddWithValue("@motif", cmbMotif.SelectedValue);
+                        cmd.Parameters.AddWithValue("@ancienDebut", ancienneDateDebut);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                MessageBox.Show("Absence modifiée avec succès !");
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur modification : " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Permet de fermer le formulaire sans enregistrer les modifications après confirmation 
+        /// </summary>
+        
+        private void btnAnnuler_Click(object sender, EventArgs e)
+        {
+            DialogResult result = MessageBox.Show(
+       "Voulez-vous vraiment annuler ?",
+       "Confirmation",
+       MessageBoxButtons.YesNo,
+       MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+                this.Close();
+        }
+    }
+}
