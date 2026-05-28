@@ -1,0 +1,254 @@
+using cned86.bddmanager;
+using cned86.dal;
+using MySql.Data.MySqlClient;
+using System;
+using System.Data;
+using System.Windows.Forms;
+
+namespace cned86
+{
+    /// <summary>
+    /// Formulaire principal de l'application permettant l'accès aux différentes fonctionnalités et informations 
+    /// </summary>
+    public partial class FrmPrincipal : Form
+    {
+        private int selectedIdPersonnel = -1;
+
+        /// <summary>
+        /// Permet d'initialiser le formulaire principal
+        /// </summary>
+        public FrmPrincipal()
+        {
+            InitializeComponent();
+        }
+
+        /// <summary>
+        /// Permet d'initialiser les données au démarrage du formulaire priincipal
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FrmPrincipal_Load(object sender, EventArgs e)
+        {
+            LoadPersonnel();
+
+            dgvPersonnel.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvPersonnel.MultiSelect = false;
+            dgvPersonnel.ReadOnly = true;
+            dgvPersonnel.AllowUserToAddRows = false;
+            dgvPersonnel.AllowUserToDeleteRows = false;
+            dgvPersonnel.EditMode = DataGridViewEditMode.EditProgrammatically;
+
+            btnModifier.Enabled = false;
+            btnSupprimer.Enabled = false;
+            btnAbsences.Enabled = false;
+
+            dgvPersonnel.CellClick += dgvPersonnel_CellClick;
+        }
+
+        private void LoadPersonnel()
+        {
+            try
+            {
+                using (MySqlConnection cn = BddManager.GetConnection())
+                {
+                    cn.Open();
+
+                    string query = "SELECT * FROM personnel";
+
+                    MySqlDataAdapter adapter = new MySqlDataAdapter(query, cn);
+
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+
+                    dgvPersonnel.DataSource = dt;
+
+                    selectedIdPersonnel = -1;
+                    UpdateButtonsState();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur chargement : " + ex.Message);
+            }
+        }
+
+        private void dgvPersonnel_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0)
+                return;
+
+            DataGridViewRow row = dgvPersonnel.Rows[e.RowIndex];
+
+            selectedIdPersonnel =
+                Convert.ToInt32(row.Cells["idpersonnel"].Value);
+
+            UpdateButtonsState();
+        }
+
+        private void UpdateButtonsState()
+        {
+            bool selected = selectedIdPersonnel != -1;
+
+            btnModifier.Enabled = selected;
+            btnSupprimer.Enabled = selected;
+            btnAbsences.Enabled = selected;
+        }
+
+        /// <summary>
+        /// Permet de supprimer un personnel séléctionné  de la base de données 
+        /// </summary>
+        
+        private void btnSupprimer_Click(object sender, EventArgs e)
+        {
+            if (selectedIdPersonnel == -1)
+            {
+                MessageBox.Show("Veuillez sélectionner un personnel !");
+                return;
+            }
+
+            try
+            {
+                using (MySqlConnection cn = BddManager.GetConnection())
+                {
+                    cn.Open();
+
+                    string checkQuery =
+                        "SELECT COUNT(*) FROM absence WHERE idpersonnel = @id";
+
+                    int nbAbsences = 0;
+
+                    using (MySqlCommand cmdCheck =
+                        new MySqlCommand(checkQuery, cn))
+                    {
+                        cmdCheck.Parameters.AddWithValue(
+                            "@id",
+                            selectedIdPersonnel
+                        );
+
+                        nbAbsences =
+                            Convert.ToInt32(cmdCheck.ExecuteScalar());
+                    }
+
+                    DialogResult result;
+
+                    if (nbAbsences > 0)
+                    {
+                        result = MessageBox.Show(
+                            "Ce personnel possède " +
+                            nbAbsences +
+                            " absence(s).\n\n" +
+                            "Elles seront également supprimées.\n\n" +
+                            "Voulez-vous continuer ?",
+                            "Confirmation suppression",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning
+                        );
+                    }
+                    else
+                    {
+                        result = MessageBox.Show(
+                            "Confirmer la suppression du personnel ?",
+                            "Confirmation",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Question
+                        );
+                    }
+
+                    if (result != DialogResult.Yes)
+                        return;
+
+                    string deleteAbs =
+                        "DELETE FROM absence WHERE idpersonnel = @id";
+
+                    using (MySqlCommand cmdAbs =
+                        new MySqlCommand(deleteAbs, cn))
+                    {
+                        cmdAbs.Parameters.AddWithValue(
+                            "@id",
+                            selectedIdPersonnel
+                        );
+
+                        cmdAbs.ExecuteNonQuery();
+                    }
+
+                    string deletePerso =
+                        "DELETE FROM personnel WHERE idpersonnel = @id";
+
+                    using (MySqlCommand cmdPerso =
+                        new MySqlCommand(deletePerso, cn))
+                    {
+                        cmdPerso.Parameters.AddWithValue(
+                            "@id",
+                            selectedIdPersonnel
+                        );
+
+                        cmdPerso.ExecuteNonQuery();
+                    }
+                }
+
+                MessageBox.Show("Suppression effectuée !");
+                LoadPersonnel();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Erreur suppression : " + ex.Message);
+            }
+        }
+
+        
+        /// <summary>
+        /// Permet d'ouvrir un formulaire afin d'ajouter un nouveau personnel dans la base de données 
+        /// </summary>
+       
+        private void btnAjouter_Click(object sender, EventArgs e)
+        {
+            FrmAjouterPersonnel frm = new FrmAjouterPersonnel();
+            frm.ShowDialog();
+
+            LoadPersonnel();
+        }
+
+
+        /// <summary>
+        /// Permet d'ouvrir un formulaire permettant de modifier un personnel préalablement séléctionné 
+        /// </summary>
+        
+        private void btnModifier_Click(object sender, EventArgs e)
+        {
+            if (selectedIdPersonnel == -1)
+            {
+                MessageBox.Show("Veuillez sélectionner un personnel !");
+                return;
+            }
+
+            FrmModifierPersonnel frm =
+                new FrmModifierPersonnel(selectedIdPersonnel);
+
+            frm.ShowDialog();
+
+            LoadPersonnel();
+        }
+
+        
+        /// <summary>
+        /// Permet d'ouvrir le formulaire de gestion des absences d'un personnel séléctionné
+        /// </summary>
+        
+        private void btnAbsences_Click(object sender, EventArgs e)
+        {
+            if (selectedIdPersonnel == -1)
+            {
+                MessageBox.Show("Veuillez sélectionner un personnel !");
+                return;
+            }
+
+            DataGridViewRow row = dgvPersonnel.SelectedRows[0];
+
+            string nom = row.Cells["nom"].Value.ToString();
+            string prenom = row.Cells["prenom"].Value.ToString();
+
+            FrmAbsences frm = new FrmAbsences(selectedIdPersonnel, nom + " " + prenom);
+            frm.ShowDialog();
+        }
+    }
+}
