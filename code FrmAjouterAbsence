@@ -8,158 +8,132 @@ using System.Windows.Forms;
 namespace cned86
 {
     /// <summary>
-    /// Formulaire permettant  d'ajouter un personnel
+    /// Formulaire permettant d'ajouter une absence pour un personnel séléctionné 
     /// </summary>
-    public partial class FrmAjouterPersonnel : Form
+    public partial class FrmAjouterAbsence : Form
     {
+        private int idPersonnel;
+
         /// <summary>
-        /// Permet d'initialiser le formulaire d'ajout du personnel 
+        /// Initialise le formulaire d'ajout d'une absence 
         /// </summary>
-        public FrmAjouterPersonnel()
+        /// <param name="id">Identifiant du personnel</param>
+        public FrmAjouterAbsence(int id)
         {
             InitializeComponent();
+            idPersonnel = id;
 
-            this.Load += FrmAjouterPersonnel_Load;
+            this.Load += FrmAjouterAbsence_Load;
+
+            
             btnEnregistrer.Click += btnEnregistrer_Click;
-            btnAnnuler.Click += btnAnnuler_Click;
+            btnAnnuler.Click += (s, e) => this.Close();
         }
 
         /// <summary>
-        /// Permet d'initialiser les éléments du formulaire au chargement de celui-ci
+        /// Permet de charger les données nécessaires au formulaire (motifs, etc. ...)
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-
-        private void FrmAjouterPersonnel_Load(object sender, EventArgs e)
+        
+        private void FrmAjouterAbsence_Load(object sender, EventArgs e)
         {
-            LoadServices();
+            LoadMotifs();
+
+            cmbMotif.SelectedIndex = -1;
+            cmbMotif.DropDownStyle = ComboBoxStyle.DropDownList;
         }
 
-        private void LoadServices()
+        /// <summary>
+        /// Permet de charger la liste de smotifs d'aabsence dans la liste déroulante de la combobox
+        /// </summary>
+        private void LoadMotifs()
         {
             try
             {
-                cmbService.Items.Clear();
-
                 using (MySqlConnection cn = BddManager.GetConnection())
                 {
                     cn.Open();
 
-                    string query = "SELECT idservice, nom FROM service";
+                    string query = "SELECT idmotif, libelle FROM motif";
 
-                    using (MySqlCommand cmd = new MySqlCommand(query, cn))
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        int count = 0;
+                    MySqlDataAdapter da = new MySqlDataAdapter(query, cn);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
 
-                        while (reader.Read())
-                        {
-                            string nom = reader["nom"].ToString();
-                            int id = Convert.ToInt32(reader["idservice"]);
-
-                            cmbService.Items.Add(new ComboItem(nom, id));
-                            count++;
-                        }
-
-                        MessageBox.Show("Services chargés : " + count);
-                    }
+                    cmbMotif.DataSource = dt;
+                    cmbMotif.DisplayMember = "libelle";
+                    cmbMotif.ValueMember = "idmotif";
                 }
-
-                cmbService.DisplayMember = "Text";
-                cmbService.ValueMember = "Value";
-
-                cmbService.SelectedIndex = -1;
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erreur LoadServices : " + ex.Message);
-            }
-        }
-
-        
-        private class ComboItem
-        {
-            public string Text { get; set; }
-            public int Value { get; set; }
-
-            public ComboItem(string text, int value)
-            {
-                Text = text;
-                Value = value;
-            }
-
-            public override string ToString()
-            {
-                return Text;
+                MessageBox.Show("Erreur chargement motifs : " + ex.Message);
             }
         }
 
         /// <summary>
-        /// Permet d'enregistrer un nouveau personnel dans la base de données 
+        /// Permet d'enregistrer une nouvelle absence dans la base de données
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        
         private void btnEnregistrer_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtNom.Text) ||
-                string.IsNullOrWhiteSpace(txtPrenom.Text) ||
-                string.IsNullOrWhiteSpace(txtTelephone.Text) ||
-                string.IsNullOrWhiteSpace(txtMail.Text) ||
-                cmbService.SelectedItem == null)
+            if (cmbMotif.SelectedIndex == -1)
             {
-                MessageBox.Show("Tous les champs doivent être remplis !");
+                MessageBox.Show("Veuillez choisir un motif !");
+                return;
+            }
+
+            if (dtpDebut.Value.Date > dtpFin.Value.Date)
+            {
+                MessageBox.Show("La date de fin doit être après la date de début !");
                 return;
             }
 
             try
             {
-                ComboItem selected = (ComboItem)cmbService.SelectedItem;
-
                 using (MySqlConnection cn = BddManager.GetConnection())
                 {
                     cn.Open();
 
                     string query = @"
-                        INSERT INTO personnel (nom, prenom, tel, mail, idservice)
-                        VALUES (@nom, @prenom, @tel, @mail, @service)";
+                        INSERT INTO absence (idpersonnel, datedebut, datefin, idmotif)
+                        VALUES (@id, @debut, @fin, @motif)";
 
                     using (MySqlCommand cmd = new MySqlCommand(query, cn))
                     {
-                        cmd.Parameters.AddWithValue("@nom", txtNom.Text.Trim());
-                        cmd.Parameters.AddWithValue("@prenom", txtPrenom.Text.Trim());
-                        cmd.Parameters.AddWithValue("@tel", txtTelephone.Text.Trim());
-                        cmd.Parameters.AddWithValue("@mail", txtMail.Text.Trim());
-                        cmd.Parameters.AddWithValue("@service", selected.Value);
+                        cmd.Parameters.AddWithValue("@id", idPersonnel);
+                        cmd.Parameters.AddWithValue("@debut", dtpDebut.Value.Date);
+                        cmd.Parameters.AddWithValue("@fin", dtpFin.Value.Date);
+                        cmd.Parameters.AddWithValue("@motif", cmbMotif.SelectedValue);
 
                         cmd.ExecuteNonQuery();
                     }
                 }
 
-                MessageBox.Show("Personnel ajouté avec succès");
+                MessageBox.Show("Absence ajoutée !");
+                this.DialogResult = DialogResult.OK;
                 this.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erreur insertion : " + ex.Message);
+                MessageBox.Show("Erreur ajout absence : " + ex.Message);
             }
         }
 
         /// <summary>
-        /// Permet après confirmation de fermer le formulaire sans enregistrer les modifications
+        /// Permet de fermer le formulaire sans enregistrer les modifications 
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        
         private void btnAnnuler_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show(
-       "Voulez-vous vraiment annuler ?",
-       "Confirmation",
-       MessageBoxButtons.YesNo,
-       MessageBoxIcon.Question);
+        "Voulez-vous vraiment annuler ?",
+        "Confirmation",
+        MessageBoxButtons.YesNo,
+        MessageBoxIcon.Question);
 
             if (result == DialogResult.Yes)
                 this.Close();
-        }
 
+        }
     }
 }
